@@ -122,10 +122,10 @@ ty}z
 
 Not only did we find nothing here, but we got Comic Sans'd as well. Pain.
 
-<center>
+<div align="center">
     <img src="https://i.imgur.com/NpE0hMm.png">
     <p>They should've added this in the stream object as well</p>
-</center>
+</div>
 
 Uploading `stream_obj_2.txt` to [TrID](http://mark0.net/soft-trid-e.html) further confirms that this is a [CFF (Compact Font Format)](https://en.wikipedia.org/wiki/PostScript_fonts#Compact_Font_Format) file, which can apparently be embedded into PDFs. Opening this in FontForge, it appears that this file contains the font used to display `jctf{red_flags_are_fake_flags}` in the original PDF. Baited again.
 
