@@ -1,6 +1,6 @@
 <div align="center">
 
-## Chimaera (Forensics)
+## ImaginaryCTF 2021 - Chimaera (Forensics)
 *From someone who fell for all the fake flags in the file*
 
 </div>
@@ -18,9 +18,9 @@
 
 ### Part 1/3 - `ictf{thr33_`
 
-For this challenge, we are given `chimaera.pdf` to play around with. Opening this up with a PDF reader displays the flag `jctf{red_flags_are_fake_flags}`, which wasn't the flag unfortunately :(
+For this challenge, we are given `chimaera.pdf` to play around with. Opening this up with a PDF reader displays the flag `jctf{red_flags_are_fake_flags}`, which was not the flag unfortunately :(
 
-Before trying out qpdf and other tools to analyze the file, we opened it up with a text editor to see what was going on:
+Before trying out qpdf and the other PDF tools, we opened it up with a text editor to see what was going on:
 
 ```
 00000000: 7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
@@ -28,19 +28,19 @@ Before trying out qpdf and other tools to analyze the file, we opened it up with
 00000020: 4000 0000 0000 0000 5801 0000 0000 0000  @.......X.......
 00000030: 0000 0000 4000 3800 0200 4000 0400 0300  ....@.8...@.....
 00000040: 0100 0000 0500 0000 0000 0000 0000 0000  ................
-<...>
+<...some fake flags below this line...>
 ```
 
-Apart from the `jctf{red_and_fake_flags_form_an_equivalence_class}` found in the file, we notice that this is an ELF file as well! After decompiling the program, it turns out that it just prints out a string. Running the file confirms this as well:
+Apart from the `jctf{red_and_fake_flags_form_an_equivalence_class}` found in the file, we notice that this is an executable file as well! After decompiling the program, it turns out that it just prints out a string. Running the file confirms this as well:
 
 ```
 $ ./chimaera.pdf
 ictf{thr33_
 ```
 
-Oops, we didn't need to decompile it. But at least we got part of the flag, and it also suggests that there are three parts we need to find.
+Oops, decompiling it was an overkill. But at least we got part of the flag, and it also suggests that there are three parts we need to find.
 
-**TL;DR:** Run the PDF as an executable file, get the first third of the flag.
+**TL;DR:** Run the PDF as an executable file, get the first part of the flag.
 
 ### Part 2/3 - `h34ds_l`
 
@@ -54,14 +54,14 @@ DECIMAL       HEXADECIMAL     DESCRIPTION
 600           0x258           Zip archive data, at least v1.0 to extract, compressed size: 5139, uncompressed size: 5139, name: chimaera.pdf
 ```
 
-Looks like there's a zip file as well! After extracting the content, it turns out the zip contains the same `chimaera.pdf` and `notflag.txt` to bait us. The rest of the flag will probably be in the PDF itself.
+Looks like there's a zip file as well! After extracting the content, it turns out the zip contains the same `chimaera.pdf` and `notflag.txt` to bait us. It looks like the rest of the flag will be in the PDF itself.
 
-Reading the content of the PDF, three sections stand out:
+Reading the content of the PDF in a text editor, three sections stand out:
 
-* Two PDF stream objects which are encoded in zlib, and
-* Another potential .zip file above the xref table.
+* Two PDF stream objects which are encoded with zlib, and
+* Another zip file above the xref table at the end of the file.
 
-Carving out the first stream object into `stream_obj_1.txt` and decompressing the content using zlib-flate, we obtain the following:
+Carving out the first stream object into `stream_obj_1.pdf` and decompressing the content using zlib-flate, we obtain the following:
 
 ```
 $ zlib-flate -uncompress < stream_obj_1.pdf > stream_obj_1.txt
@@ -83,7 +83,7 @@ Apart from the gibberish and another fake flag, we see `h34ds_l` wrapped in pare
 
 Combining it with the first third of the flag we obtain `ictf{thr33_h34ds_l`. This looks promising. Only one third to go!
 
-**TL;DR:** Carve out the first stream object in the PDF and decompress using zlib-flate to get the second third of the flag.
+**TL;DR:** Carve out the first stream object from the PDF and decompress using zlib-flate to get the second part of the flag.
 
 ### Part 2.5/3 - No flags here :(
 
@@ -120,13 +120,16 @@ ty}z
 ]Okylnx
 ```
 
-Not only did we find nothing here, but we got Comic Sans'd as well. 
+Not only did we find nothing here, but we got Comic Sans'd as well. Pain.
 
-Pain.
+<center>
+    <img src="https://i.imgur.com/NpE0hMm.png">
+    <p>They should've added this in the stream object as well</p>
+</center>
 
-Uploading `stream_obj_2.txt` to [TrID](http://mark0.net/soft-trid-e.html) further confirms that this is a [CFF (Compact Font Format)](https://en.wikipedia.org/wiki/PostScript_fonts#Compact_Font_Format) file, which can apparently be embedded into PDFs. Opening this in FontForge, it appears that this file seems to contain the font used to display `jctf{red_flags_are_fake_flags}` in the original PDF. Baited again.
+Uploading `stream_obj_2.txt` to [TrID](http://mark0.net/soft-trid-e.html) further confirms that this is a [CFF (Compact Font Format)](https://en.wikipedia.org/wiki/PostScript_fonts#Compact_Font_Format) file, which can apparently be embedded into PDFs. Opening this in FontForge, it appears that this file contains the font used to display `jctf{red_flags_are_fake_flags}` in the original PDF. Baited again.
 
-**TL;DR:** The second stream object doesn't contain anything useful, and we find more fake flags.
+**TL;DR:** The second stream object does not contain anything useful, and we find more fake flags.
 
 ### Part 3/3 - `1k3_kerber0s}`
 
@@ -182,16 +185,16 @@ Apart from the very clear `notflag.txt` and fake flags, there appears to be anot
 
 Both of these combined make it impossible for standard tools to unzip it without modifying the header. Let's fix that.
 
-There are a few things we need to do to fix the file:
+There are three things we need to do to fix the file:
 
-* Add an entry to the central directory for the hidden file,
-* Remove the other two entries in the zip file, and
-* Figure out the compression algorithm used by the challenge author.
+1. Add an entry to the central directory for the hidden file,
+2. Remove the other two entries in the zip file, and
+3. Figure out the compression algorithm used by the challenge author.
 
 Rather than adding a new entry, we can modify one of the existing central directory entries to decompress the hidden file:
 
 * Change the compression method to `0d` to match the hidden file's compression algorithm,
-* Change the CRC32 signature to `0dc61393` to match the hidden file's signature,
+* Change the CRC32 signature to `0dc61393` to match the hidden file's signature found in the local header,
 * Change the compressed and uncompressed sizes to `21` and `0d` respectively to match the hidden file (we also get a hint that the uncompressed data has 13 bytes, meaning the last third of the flag has 13 letters),
 * Change the offset of the local header to `00` (the original value had an offset that took the entire PDF file into account, which also explains how unzipping the file gave us `chimaera.pdf` again!), and
 * Remove the file name and change its length to 0.
@@ -210,7 +213,7 @@ We can remove the other entry to the central directory as well, and modify the e
 00000080: 0000 000a                                ....
 ```
 
-Running zipinfo on it shows that no errors are found, so now we need to figure out the compression algorithm. Thankfully, there are only 10-20 standardized compression methods, so we can try all of them and modify the file as we go.
+Running zipinfo on it shows that no errors are found, but we can't unzip it just yet since we are still missing the compression algorithm. Thankfully, there are only 10-20 standardized compression methods, so we can try all of them and modify the file as we go.
 
 Though there is a way to identify the compression algorithm. Carving the compressed data into `data.txt` and running binwalk on it, we get the following:
 
@@ -250,9 +253,9 @@ $ strings zipped
 1k3_kerber0s}
 ```
 
-Success! And just as the first third of the flag indicated, the full flag is made from three separate parts. Combining the three parts we obtain `ictf{thr33_h34ds_l1k3_kerber0s}`.
+Success! And just as the first part of the flag indicated, the full flag is made from three separate parts. Combining the three parts we obtain `ictf{thr33_h34ds_l1k3_kerber0s}`.
 
-**TL;DR**: There is a hidden zip file squished between the fake flag file and `chimaera.pdf` at the end of the PDF. Fixing the structure of the file and its compression algorithm, we extract the third part of the flag as `1k3_kerber0s}`.
+**TL;DR:** There is a hidden zip file between `notflag.txt` and `chimaera.pdf` at the end of the PDF. Fixing the structure of the file and identifying its compression algorithm, we extract the third part of the flag as `1k3_kerber0s}`.
 
 
 ## Resources Used
